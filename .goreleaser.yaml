@@ -1,0 +1,141 @@
+# Make sure to check the documentation at https://goreleaser.com
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+project_name: winget-pkgs-automation
+dist: ./dist
+before:
+  hooks:
+    - go mod tidy
+env:
+  # cgo is only needed for linux and macos builds but
+  # we enable here to avoid redundancy in the config
+  - CGO_ENABLED=1
+report_sizes: true
+builds:
+  - id: windows-and-linux-builds
+    skip: false
+    goos: [windows, linux]
+    goarch: [amd64, arm64]
+    flags: -trimpath
+    overrides:
+      - goos: linux
+        goarch: arm64
+        env:
+          - CC=aarch64-linux-gnu-gcc
+          - CXX=aarch64-linux-gnu-g++
+    ignore:
+      - goos: windows
+        goarch: arm64
+  # separate builds for macos, since env vars are not be detected
+  # by osxcross when using 'overrides' functionality of goreleaser
+  - id: macos-builds-using-osxcross
+    skip: false
+    goos: [darwin]
+    goarch: [amd64]
+    flags: -trimpath
+    env:
+      - CC={{ if eq .Arch "arm64" }}oa64-clang{{ else }}o64-clang{{ end }}
+      - CXX={{ if eq .Arch "arm64" }}oa64-clang++{{ else }}o64-clang++{{ end }}
+      - PKG_CONFIG_SYSROOT_DIR={{ .Env.GITHUB_WORKSPACE }}/sysroots/macos-{{ .Arch }}
+      - PKG_CONFIG_PATH={{ .Env.GITHUB_WORKSPACE }}/sysroots/macos-{{ .Arch }}/usr/local/lib/pkgconfig
+      - PKG_CONFIG_LIBDIR={{ .Env.GITHUB_WORKSPACE }}/sysroots/macos-{{ .Arch }}/usr/local/lib
+      - OSXCROSS_PKG_CONFIG_USE_NATIVE_VARIABLES=1
+release:
+  github:
+    owner: vedantmgoyal2009
+    name: vedantmgoyal2009
+  mode: keep-existing
+  draft: true
+  replace_existing_draft: true
+  prerelease: "true"
+  disable: false
+  skip_upload: false
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+    format_overrides:
+      - format: binary
+        goos: windows
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+  disable: false
+# signs:
+#   - artifacts: checksum
+brews:
+  - name: winget-automation-cli
+    url_template: "https://github.com/vedantmgoyal2009/winget-pkgs-automation/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    homepage: https://github.com/vedantmgoyal2009/winget-pkgs-automation
+    description: |
+      This CLI is a part of a larger project called winget-pkgs-automation.
+      It was created to aid the automation, but can be used independently as well.
+    license: AGPL-3.0
+    dependencies:
+      - name: msitools
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    commit_author:
+      name: vedantmgoyal2009-bot[bot]
+      email: 110876359+vedantmgoyal2009-bot[bot]@users.noreply.github.com
+    repository:
+      owner: vedantmgoyal2009
+      name: homebrew-tap
+      branch: main
+      pull_request:
+        enabled: false # push directly to branch
+    skip_upload: false
+winget:
+  - name: WinGet Automation CLI
+    package_identifier: vedantmgoyal2009.winget-automation-cli
+    author: Vedant
+    homepage: https://github.com/vedantmgoyal2009/winget-pkgs-automation
+    publisher: Vedant
+    publisher_url: https://github.com/vedantmgoyal2009
+    publisher_support_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation/issues
+    license: MIT
+    license_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation/blob/main/LICENSE
+    copyright: Copyright (c) 2023 Vedant
+    copyright_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation/blob/main/LICENSE
+    release_notes_url: "https://github.com/vedantmgoyal2009/winget-pkgs-automation/releases/{{ .Tag }}"
+    commit_msg_template: "Update {{ .ProjectName }} version v1.0.0"
+    short_description: winget-pkgs-automation (cli)
+    description: |
+      This CLI is a part of a larger project called winget-pkgs-automation.
+      It was created to aid the automation, but can be used independently as well.
+    url_template: https://github.com/vedantmgoyal2009/winget-pkgs-automation/releases/download/{{ .Tag }}/{{ .ArtifactName }}
+    tags: [winget, winget-pkgs, golang, cli, automation]
+    repository:
+      owner: vedantmgoyal2009
+      name: winget-pkgs
+      branch: winget-automation-cli-{{ .Tag }}-{{ .Now.Format "20060102150405"}}
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+        draft: false
+    commit_author:
+      name: vedantmgoyal2009-bot[bot]
+      email: 110876359+vedantmgoyal2009-bot[bot]@users.noreply.github.com
+    skip_upload: false
+chocolateys:
+  - name: winget-automation-cli
+    title: WinGet Automation CLI
+    owners: Vedant
+    authors: Vedant
+    copyright: Copyright (c) 2023 Vedant
+    project_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation
+    license_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation/blob/main/LICENSE
+    require_license_acceptance: false
+    project_source_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation
+    docs_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation/blob/main/README.md
+    bug_tracker_url: https://github.com/vedantmgoyal2009/winget-pkgs-automation/issues
+    tags: winget winget-pkgs golang cli automation command-line
+    summary: winget-pkgs-automation (cli)
+    description: |
+      This CLI is a part of a larger project called winget-pkgs-automation.
+      It was created to aid the automation, but can be used independently as well.
+    url_template: https://github.com/vedantmgoyal2009/winget-pkgs-automation/releases/download/{{ .Tag }}/{{ .ArtifactName }}
+    release_notes: https://github.com/vedantmgoyal2009/winget-pkgs-automation/releases/tag/{{ .Tag }}
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+    source_repo: https://push.chocolatey.org/
+    skip_publish: false
