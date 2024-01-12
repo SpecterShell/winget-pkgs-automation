@@ -1,0 +1,26 @@
+{
+  "$schema": "https://github.com/vedantmgoyal2009/winget-pkgs-automation/raw/main/schema.json",
+  "Identifier": "GlennDelahoy.SnappyDriverInstallerOrigin",
+  "Update": [
+    {
+      "InvokeType": "WebRequest",
+      "Uri": "https://www.glenn.delahoy.com/snappy-driver-installer-origin",
+      "Method": "Get",
+      "Headers": {},
+      "Body": "",
+      "UserAgent": ""
+    }
+  ],
+  "PostResponseScript": "$Response = $Response.Links.href.Where({ $_ -match $InstallerRegex })",
+  "VersionRegex": "\\d+\\.\\d+\\.\\d+",
+  "InstallerRegex": "\\d+\\.zip$",
+  "PreviousVersion": "",
+  "ManifestFields": {
+    "PackageVersion": "($Response | Select-String -Pattern $VersionRegex).Matches.Value",
+    "InstallerUrls": "\"https://www.glenn.delahoy.com$Response\""
+  },
+  "AdditionalInfo": {},
+  "PostUpgradeScript": "",
+  "SkipPRCheck": false,
+  "SkipPackage": false
+}

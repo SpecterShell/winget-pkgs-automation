@@ -1,0 +1,35 @@
+{
+  "$schema": "https://github.com/vedantmgoyal2009/winget-pkgs-automation/raw/main/schema.json",
+  "Identifier": "OpenJS.NodeJS",
+  "Update": [
+    {
+      "InvokeType": "RestMethod",
+      "Uri": "https://api.github.com/repos/nodejs/node/releases",
+      "Method": "Get",
+      "Headers": {
+        "Authorization": "$AuthToken",
+        "Accept": "application/vnd.github.v3+json"
+      },
+      "Body": "",
+      "UserAgent": ""
+    }
+  ],
+  "PostResponseScript": [
+    "$Response = $Response.Where({ $_.name.Contains('Current') }) | Select-Object -First 1",
+    "$UpdateCondition = $Response.id -gt $PreviousReleaseId"
+  ],
+  "VersionRegex": "[0-9.]+",
+  "InstallerRegex": ".msi$",
+  "PreviousVersion": "",
+  "ManifestFields": {
+    "PackageVersion": "$Response.tag_name.TrimStart('v')",
+    "InstallerUrls": "@(\"https://nodejs.org/dist/$($Response.tag_name)/node-$($Response.tag_name)-x64.msi\", \"https://nodejs.org/dist/$($Response.tag_name)/node-$($Response.tag_name)-x86.msi\")",
+    "ReleaseDate": "(Get-Date -Date $Response.published_at).ToString('yyyy-MM-dd')"
+  },
+  "AdditionalInfo": {
+    "PreviousReleaseId": 0
+  },
+  "PostUpgradeScript": "$Package.AdditionalInfo.PreviousReleaseId = $Response.id",
+  "SkipPRCheck": false,
+  "SkipPackage": false
+}
