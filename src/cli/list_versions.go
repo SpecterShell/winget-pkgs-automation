@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/spf13/cobra"
-	"github.com/vedantmgoyal2009/winget-pkgs-automation/internal/github"
+	"github.com/vedantmgoyal2009/winget-pkgs-automation/src/internal/github"
 )
 
 var (

@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/vedantmgoyal2009/winget-pkgs-automation/internal/github"
-	"github.com/vedantmgoyal2009/winget-pkgs-automation/internal/installer"
+	"github.com/vedantmgoyal2009/winget-pkgs-automation/src/internal/github"
+	"github.com/vedantmgoyal2009/winget-pkgs-automation/src/internal/installer"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 

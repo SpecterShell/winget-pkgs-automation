@@ -11,7 +11,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/vedantmgoyal2009/winget-pkgs-automation/internal/msi"
+	"github.com/vedantmgoyal2009/winget-pkgs-automation/src/internal/msi"
 )
 
 var cache_installerInfo = map[string]map[string]string{}

@@ -1,4 +1,4 @@
-module github.com/vedantmgoyal2009/winget-pkgs-automation
+module github.com/vedantmgoyal2009/winget-pkgs-automation/src
 
 go 1.21
 
