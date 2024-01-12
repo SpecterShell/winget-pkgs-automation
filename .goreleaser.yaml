@@ -33,6 +33,7 @@ builds:
     goarch: [amd64]
     flags: -trimpath
     env:
+      # $env:GITHUB_WORKSPACE is set by default to project's root directory
       - CC={{ if eq .Arch "arm64" }}oa64-clang{{ else }}o64-clang{{ end }}
       - CXX={{ if eq .Arch "arm64" }}oa64-clang++{{ else }}o64-clang++{{ end }}
       - PKG_CONFIG_SYSROOT_DIR={{ .Env.GITHUB_WORKSPACE }}/sysroots/macos-{{ .Arch }}
@@ -59,8 +60,15 @@ checksum:
   name_template: checksums.txt
   algorithm: sha256
   disable: false
-# signs:
-#   - artifacts: checksum
+signs:
+  - cmd: cosign
+    args:
+      - sign-blob
+      - --key=cosign.key
+      - --output-signature=${signature}
+      - ${artifact}
+      - --yes
+    artifacts: checksum
 brews:
   - name: winget-automation-cli
     url_template: "https://github.com/vedantmgoyal2009/winget-pkgs-automation/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
