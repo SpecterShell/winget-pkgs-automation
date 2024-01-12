@@ -2,12 +2,9 @@
 package msi
 
 /*
-#cgo CFLAGS: -I/opt/homebrew/Cellar/msitools/0.103/include/libmsi-1.0 -I/opt/homebrew/Cellar/glib/2.78.3/lib/glib-2.0 -I/usr/include/libmsi-1.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
-#cgo LDFLAGS: -L/opt/homebrew/Cellar/msitools/0.103/lib -lmsi
-
-#include <libmsi.h>
-#include <stdlib.h>
+#cgo pkg-config: libmsi-1.0
 #include <stdio.h>
+#include <libmsi.h>
 */
 import "C"
 import (
