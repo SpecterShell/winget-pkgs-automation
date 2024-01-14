@@ -43,11 +43,11 @@ builds:
 release:
   github:
     owner: vedantmgoyal2009
-    name: vedantmgoyal2009
+    name: winget-pkgs-automation
   mode: keep-existing
-  draft: true
-  replace_existing_draft: true
-  prerelease: "true"
+  draft: false
+  replace_existing_draft: false
+  prerelease: "auto"
   disable: false
   skip_upload: false
 archives:
@@ -79,7 +79,7 @@ brews:
     license: AGPL-3.0
     dependencies:
       - name: msitools
-    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    commit_msg_template: "feat: {{ .ProjectName }} version {{ .Tag }}"
     commit_author:
       name: vedantmgoyal2009-bot[bot]
       email: 110876359+vedantmgoyal2009-bot[bot]@users.noreply.github.com

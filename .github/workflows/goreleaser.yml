@@ -1,0 +1,160 @@
+name: GoReleaser
+on:
+  push:
+    paths:
+      - .github/workflows/goreleaser.yml # when the workflow file changes
+      - src/** # source code (also goreleaser and golangci-lint config)
+      - sysroots/** # when the sysroots are updated
+    branches: ['main']
+    tags-ignore: ['nightly', '*-nightly']
+  pull_request:
+    paths:
+      - src/** # source code (also goreleaser and golangci-lint config)
+      - sysroots/** # when the sysroots are updated
+concurrency:
+  group: goreleaser-${{ github.ref_name }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  pack-macos-sdks:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          repository: tpoechtrager/osxcross
+          persist-credentials: false
+
+      - uses: actions/cache@v3.3.2
+        with:
+          path: MacOSX*.sdk.tar.xz
+          key: macos-sdks
+          lookup-only: true
+          enableCrossOsArchive: true
+        id: sdk-cache
+
+      - if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: ./tools/gen_sdk_package.sh
+  build-and-release:
+    needs: pack-macos-sdks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository 📥
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout tpoechtrager/osxcross 📥
+        uses: actions/checkout@v4.1.1
+        with:
+          repository: tpoechtrager/osxcross
+          persist-credentials: false
+          path: ${{ github.workspace }}/osxcross
+
+      - uses: actions/setup-go@v5.0.0
+        with:
+          check-latest: true
+          go-version-file: ./src/go.mod
+          cache-dependency-path: ./src/go.sum
+          cache: true
+
+      # Disabled because it gives false positives
+      # - name: Run govulncheck 🕵️‍♀️
+      #   run: go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...
+
+      - name: Restore osxcross/target from cache 🗃️
+        uses: actions/cache@v3.3.2
+        with:
+          path: ./osxcross/target/**
+          key: osxcross-target-cache
+        id: osxcross-prebuilt
+
+      - name: Get SDKs from pack-macos-sdks job 📩
+        if: steps.osxcross-prebuilt.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@v3.3.2
+        with:
+          path: MacOSX*.sdk.tar.xz
+          key: macos-sdks
+          enableCrossOsArchive: true
+          fail-on-cache-miss: true
+        id: macos-sdks-cache
+
+      - name: Build osxcross 🛠️
+        if: steps.macos-sdks-cache.outputs.cache-hit == 'true'
+        run: mv ../*.sdk.tar.xz ./tarballs/ && UNATTENDED=1 SDK_VERSION=13 ./build.sh
+        working-directory: ${{ github.workspace }}/osxcross
+
+      - name: Setup for compiling for arm64/amd64 linux 🐧
+        run: |
+          sudo sed -i -e 's/deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-backports main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y libmsi-dev libglib2.0-dev gcc-aarch64-linux-gnu libmsi-dev:arm64 libglib2.0-dev:arm64
+
+      - name: Little more magic? 🧝🪄🔮
+        run: |
+          $env:COSIGN_KEY | Out-File -FilePath $env:GITHUB_WORKSPACE/src/cosign.key -Encoding utf8
+          "${{ github.workspace }}/osxcross/target/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+        shell: pwsh
+
+      - name: Install cosign 📝✍️
+        run: go install github.com/sigstore/cosign/v2/cmd/cosign@latest
+
+      - name: Run GoReleaser (stable) 🚀
+        if: github.ref_type == 'tag'
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          version: nightly
+          distribution: goreleaser
+          args: release --clean
+          workdir: src
+        env:
+            COSIGN_PASSWORD: ${{ secrets.COSIGN_PWD }}
+            CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+            GITHUB_TOKEN: ${{ secrets.MYSUPERSECRETINFORMATION }}
+
+      - name: Get nightly tag 🌙
+        if: github.ref_type == 'branch'
+        run: |
+          latest_tag=$(gh release list --exclude-pre-releases --limit 1 | cut -f1)
+          new_tag=$(echo $latest_tag | awk -F. -v OFS=. '{$2++; $3=0; print}')
+          echo "tag=$new_tag-nightly" >> $GITHUB_OUTPUT
+          git tag $new_tag-nightly
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        id: get-nightly-tag
+
+      - name: Run GoReleaser 🌜nightly🌛
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          version: nightly
+          distribution: goreleaser
+          args: release --clean --skip=announce,homebrew,chocolatey,winget
+          workdir: src
+        env:
+          GORELEASER_CURRENT_TAG: ${{ steps.get-nightly-tag.outputs.tag }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PWD }}
+          GITHUB_TOKEN: ${{ secrets.MYSUPERSECRETINFORMATION }}
+
+      - name: Move release to nightly tag 🌝
+        if: github.ref_type == 'branch'
+        run: |
+          gh release delete nightly --cleanup-tag --yes
+          api_url=$(gh release view "$NIGHTLY_TAG" --json apiUrl --jq '.apiUrl')
+          gh api --method PATCH \
+            /repos/$GITHUB_REPOSITORY/releases/$(basename $api_url) \
+            --field tag_name=nightly \
+            --field body='This is a nightly release. Not intended for use in production.' \
+            --field draft=false \
+            --field prerelease=true
+          gh api --method DELETE /repos/$GITHUB_REPOSITORY/git/refs/tags/$NIGHTLY_TAG
+        env:
+          NIGHTLY_TAG: ${{ steps.get-nightly-tag.outputs.tag }}
+          GH_TOKEN: ${{ secrets.MYSUPERSECRETINFORMATION }}
