@@ -25,7 +25,7 @@ jobs:
           repository: tpoechtrager/osxcross
           persist-credentials: false
 
-      - uses: actions/cache@v3.3.2
+      - uses: actions/cache@v3.3.3
         with:
           path: MacOSX*.sdk.tar.xz
           key: macos-sdks
@@ -64,7 +64,7 @@ jobs:
       #   run: go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...
 
       - name: Restore osxcross/target from cache 🗃️
-        uses: actions/cache@v3.3.2
+        uses: actions/cache@v3.3.3
         with:
           path: ./osxcross/target/**
           key: osxcross-target-cache
@@ -72,7 +72,7 @@ jobs:
 
       - name: Get SDKs from pack-macos-sdks job 📩
         if: steps.osxcross-prebuilt.outputs.cache-hit != 'true'
-        uses: actions/cache/restore@v3.3.2
+        uses: actions/cache/restore@v3.3.3
         with:
           path: MacOSX*.sdk.tar.xz
           key: macos-sdks
