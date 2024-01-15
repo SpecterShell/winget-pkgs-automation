@@ -17,7 +17,7 @@
   "PreviousVersion": "",
   "ManifestFields": {
     "InstallerUrls": "$Response.Replace('http://','https://')",
-    "PackageVersion": "(winget-pkgs-automation get-installer-info --json \"$($Update.InstallerUrls)\" | ConvertFrom-Json).PackageVersion"
+    "PackageVersion": "(.\\winget-pkgs-automation.exe gii --json \"$($Update.InstallerUrls)\" | ConvertFrom-Json).PackageVersion"
   },
   "AdditionalInfo": {},
   "PostUpgradeScript": "",

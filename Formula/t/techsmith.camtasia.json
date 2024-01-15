@@ -25,7 +25,7 @@
   "PreviousVersion": "",
   "ManifestFields": {
     "InstallerUrls": "\"https://download.techsmith.com$($Response2.RelativePath)camtasia.exe\"",
-    "PackageVersion": "(winget-pkgs-automation get-installer-info --json \"$($Update.InstallerUrls)\" | ConvertFrom-Json).PackageVersion",
+    "PackageVersion": "(.\\winget-pkgs-automation.exe gii --json \"$($Update.InstallerUrls)\" | ConvertFrom-Json).PackageVersion",
     "ReleaseDate": "(Get-Date -Date $Response2.Release).ToString('yyyy-MM-dd')"
   },
   "AdditionalInfo": {},

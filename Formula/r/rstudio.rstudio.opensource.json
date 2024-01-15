@@ -1,6 +1,6 @@
 {
-  "$schema": "https://github.com/vedantmgoyal2009/vedantmgoyal2009/raw/main/winget-pkgs-automation/schema.json",
-  "Identifier": "RStudio.RStudio.2022.OpenSource",
+  "$schema": "https://github.com/vedantmgoyal2009/winget-pkgs-automation/raw/main/schema.json",
+  "Identifier": "RStudio.RStudio.OpenSource",
   "Update": [
     {
       "InvokeType": "RestMethod",

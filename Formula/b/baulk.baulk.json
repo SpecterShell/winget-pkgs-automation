@@ -22,7 +22,7 @@
   "PreviousVersion": "",
   "ManifestFields": {
     "InstallerUrls": "$Response.assets | ForEach-Object { if ($_.name -match $InstallerRegex) { $_.browser_download_url } }",
-    "PackageVersion": "(winget-pkgs-automation get-installer-info --json \"$($Update.InstallerUrls[0])\" | ConvertFrom-Json).PackageVersion",
+    "PackageVersion": "(.\\winget-pkgs-automation.exe gii --json \"$($Update.InstallerUrls[0])\" | ConvertFrom-Json).PackageVersion",
     "ReleaseDate": "(Get-Date -Date $Response.published_at).ToString('yyyy-MM-dd')"
   },
   "AdditionalInfo": {

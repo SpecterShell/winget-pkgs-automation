@@ -16,7 +16,7 @@
   "InstallerRegex": ".(exe|msi|msix|appx)(bundle){0,1}$",
   "PreviousVersion": "",
   "ManifestFields": {
-    "PackageVersion": "(winget-pkgs-automation get-installer-info --json \"$($Response)\" | ConvertFrom-Json).PackageVersion",
+    "PackageVersion": "(.\\winget-pkgs-automation.exe gii --json \"$($Response)\" | ConvertFrom-Json).PackageVersion",
     "InstallerUrls": "$Response"
   },
   "AdditionalInfo": {},
